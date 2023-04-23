@@ -1,0 +1,75 @@
+from flask import Flask, render_template, request
+import requests
+
+
+app = Flask(__name__)
+
+# Set up API key and endpoint URL
+API_KEY = "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"
+ENDPOINT = "https://api.openai.com/v1/chat/completions"
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return app.send_static_file(filename)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/get_response', methods=['POST'])
+def get_response():
+    user_question = request.form['question']
+
+    # Compose input messages
+    messages = [
+        {"role": "system", "content": "You are an AI world builder, the user will input a concept for his world and you will expand on it, make it detailed."},
+        {"role": "user", "content": user_question},
+    ]
+
+    # Set up headers with API key for authentication
+    headers = { 
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Set up data with input messages and model parameter
+    data = {
+        "messages": messages,
+        "model": "gpt-3.5-turbo"
+    }
+
+    # Send POST request to the ChatGPT API
+    response = requests.post(ENDPOINT, headers=headers, json=data)
+
+    if response.status_code == 200:
+        # Extract assistant's response from API response
+        result = response.json()
+        concept_extins = result["choices"][0]["message"]["content"]
+        return render_template('index.html', concept_extins=concept_extins)
+        messages = [
+            {"role": "system", "content": "You are an AI world builder, the user will input a concept for his world and you will create a location, a important place in that world, make it detailed."},
+            {"role": "user", "content": concept_extins},
+        ]
+
+        # Set up headers with API key for authentication
+        headers = { 
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # Set up data with input messages and model parameter
+        data = {
+            "messages": messages,
+            "model": "gpt-3.5-turbo"
+        }
+
+        # Send POST request to the ChatGPT API
+        response = requests.post(ENDPOINT, headers=headers, json=data)
+
+        if response.status_code == 200:
+            # Extract assistant's response from API response
+            result = response.json()
+            locatie1 = result["choices"][0]["message"]["content"]
+            return render_template('index.html', concept_extins=concept_extins, locatie1 = locatie1)
+        

@@ -1,0 +1,329 @@
+from flask import Flask, render_template, request
+import requests
+
+
+app = Flask(__name__)
+
+# Set up API key and endpoint URL
+API_KEY = "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"
+ENDPOINT = "https://api.openai.com/v1/chat/completions"
+IMG_API = "https://711be0d49239f53874.gradio.live"
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return app.send_static_file(filename)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/get_response', methods=['POST'])
+def get_response():
+    user_question = request.form['question']
+
+    # Compose input messages
+    messages = [
+        {"role": "system", "content": "Ești un o inteligenbta artificiala creatoare de lumi, utilizatorul va introduce un concept pentru lumea sa și tu îl vei dezvolta, făcându-l detaliat"},
+        {"role": "user", "content": user_question},
+    ]
+
+    # Set up headers with API key for authentication
+    headers = { 
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Set up data with input messages and model parameter
+    data = {
+        "messages": messages,
+        "model": "gpt-3.5-turbo"
+    }
+
+    # Send POST request to the ChatGPT API
+    response = requests.post(ENDPOINT, headers=headers, json=data)
+
+    if response.status_code == 200:
+        # Extract assistant's response from API response
+        result = response.json()
+        concept_extins = result["choices"][0]["message"]["content"]
+
+        #locatia
+
+        messages = [
+            {"role": "system", "content": "Utilizatorul va introduce un concept pentru lumea lui și tu vei crea o locație, un loc important în acea lume, ai grija sa fie detaliat. Doar descrie aspectul său vizual."},
+            {"role": "user", "content": concept_extins},
+        ]
+
+        # Set up headers with API key for authentication
+        headers = { 
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # Set up data with input messages and model parameter
+        data = {
+            "messages": messages,
+            "model": "gpt-3.5-turbo"
+        }
+
+        # Send POST request to the ChatGPT API
+        response = requests.post(ENDPOINT, headers=headers, json=data)
+
+        if response.status_code == 200:
+            # Extract assistant's response from API response
+            result = response.json()
+            locatie1 = result["choices"][0]["message"]["content"]
+            
+
+            #location prompt
+            #locatia
+
+            messages = [
+                {"role": "system", "content": "You are a translator that will translate from romanian to english , be very accurate"},
+                {"role": "user", "content": locatie1},
+            ]
+
+            # Set up headers with API key for authentication
+            headers = { 
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            }
+
+            # Set up data with input messages and model parameter
+            data = {
+                "messages": messages,
+                "model": "gpt-3.5-turbo"
+            }
+
+            # Send POST request to the ChatGPT API
+            response = requests.post(ENDPOINT, headers=headers, json=data)
+
+            if response.status_code == 200:
+                # Extract assistant's response from API response
+                result = response.json()
+                locatie1_eng = result["choices"][0]["message"]["content"]
+                print(locatie1_eng)
+
+                #RO
+
+                messages = [
+                {"role": "system", "content": '''You are an image generation prompt maker, I will feed you some prompts so that you can see the structure of how a prompt should be written.
+
+                Prompts these are composed of more details about the asthetic, for example look at this prompt:
+                It s very important to only include visual clues in the prompt, if you recive a long text concentrate on the visual aspect, I mostly interested in landscapes, landscapes are the most importsant.
+                Before jumping into the prompts there are some VERY IMPORTANT things to keep in mind, the word order is very important in the prompts, the earlier a word appears the more impact it will have on the final image, so specify important details earlier on.
+
+                Prompt:
+
+                A forbidden castle high up in the mountains, (intricate details:1.12), hdr, (intricate details, hyperdetailed:1.15), (natural skin texture, hyperrealism, soft light, sharp:1.2), game art, key visual, surreal
+
+                As you can see its focused more on certain keywords like: hyperrealism, soft light, sharp:1.2), game art, key visual, surreal
+                This is the basic of prompt engeniring, The description of the scene should be pretty short and it should not contain many verbs, mainly use noun-adjective, always separate elements by a comma. Let's look at another prompt:
+
+                8k portrait of beautiful cyborg with brown hair, intricate, elegant, highly detailed, majestic, digital photography, art by artgerm and ruan jia and greg rutkowski surreal painting gold butterfly filigree, broken glass, (masterpiece, sidelighting, finely detailed beautiful eyes: 1.2), hdr,
+
+
+                Its recomanded to start the prompt with key words like: masterpiece, 8K.
+                In this example you can also see that the description of the scene is quite short, most of the prompt is composed of key words, also use artist names that are relevant to the style.
+
+                Lets see another prompt:
+
+                (extremely detailed CG unity 8k wallpaper), full shot body photo of the most beautiful artwork in the world, beautiful women, sunset, professional majestic oil painting by Ed Blinkey, Atey Ghailan, Studio Ghibli, by Jeremy Mann, Greg Manchess, Antonio Moro, trending on ArtStation, trending on CGSociety, Intricate, High Detail, Sharp focus, dramatic, photorealistic painting art by midjourney and greg rutkowski
+
+                Its important that when creating prompts to specify what type of image it is, for example:"full shot body photo ", "portrait of", "a painting of" , "b&w photo of", etc.
+                Here are some other prompts:
+                (masterpiece), (extremely intricate), fantasy, (((photorealistic photo of an evil hermit, male, villain, anti hero, evil face, masculine face, medium hair, Maroon hair, wicked, cruel, sinister, malicious, ruthless, masculine, athletic))), (((dark bloody clothing, intricate details on clothing))), (perfect composition:1.4), aspect ratio 1:1, beach, deviantart hd, artstation hd, concept art, detailed face and body, award-winning photography, margins, detailed face, professional oil painting by Ed Blinkey, Atey Ghailan, Jeremy Mann, Greg Manchess, Alex Gray, trending on ArtStation, trending on CGSociety, intricate, high detail, sharp focus, dramatic, award winning matte drawing cinematic lighting octane render unreal engine volumetrics dtx
+
+                Here are some other prompts:
+                "(masterpiece), (extremely intricate), fantasy, (((photorealistic photo of an evil hermit, male, villain, anti hero, evil face, masculine face, medium hair, Maroon hair, wicked, cruel, sinister, malicious, ruthless, masculine, athletic))), (((dark bloody clothing, intricate details on clothing))), (perfect composition:1.4), aspect ratio 1:1, beach, deviantart hd, artstation hd, concept art, detailed face and body, award-winning photography, margins, detailed face, professional oil painting by Ed Blinkey, Atey Ghailan, Jeremy Mann, Greg Manchess, Alex Gray, trending on ArtStation, trending on CGSociety, intricate, high detail, sharp focus, dramatic, award winning matte drawing cinematic lighting octane render unreal engine volumetrics dtx
+                "
+
+                "oil on matte canvas, sharp details, the expanse scifi spacescape ceres colony, intricate, highly detailed, digital painting, rich color, smooth, sharp focus, illustration, Unreal Engine 5, 8K, art by artgerm and greg rutkowski and alphonse mucha"
+                "(8k, best quality, masterpiece:1.2),(best quality:1.0), (ultra highres:1.0), watercolor, a beautiful woman, shoulder, hair ribbons, by agnes cecile, half body portrait, extremely luminous bright design, pastel colors, (ink:1.3), autumn lights"'''},
+                {"role": "user", "content": ''' Create a prompt for this location:
+
+                The piece being described here is a captivating digital art that is truly a masterpiece in terms of its quality. The use of cinematic lighting in this artwork is particularly striking, with the colors being vivid and the contrast being very high. The mountain landscape is particularly eerie and unsettling, with twisted trees and lush grass that give it an almost mystical quality.
+
+                This artwork has a horror theme, which is accentuated by the use of a menacing monster that seems to be lurking in the shadows. The atmosphere is dark and foreboding, with the use of blood rain pouring down from the sky, a blood-red river flowing through the scene, and a haunting blood moon in the sky. All of these elements come together to create a chilling and intense visual experience that is sure to stay with the viewer long after they have finished looking at the piece.
+
+                In terms of the technical aspects of the artwork, the use of color is particularly effective. The colors are bright and bold, which helps to draw the viewer's eye to different parts of the scene. The contrast is also very high, which helps to create a sense of depth and texture that is particularly effective when it comes to the mountain landscape.
+
+                Overall, this artwork is a stunning example of digital art that combines a captivating aesthetic with a horror theme. The use of cinematic lighting, colorful imagery, and high contrast all come together to create a truly immersive experience for the viewer. The addition of the menacing monster, blood rain, blood river, and blood moon all add to the dark and unsettling atmosphere of the scene, making this a piece of artwork that is sure to leave a lasting impression on anyone who views it.'''},
+                {"role": "assistant", "content": ''' Ok, here is your prompt: 
+                (masterpiece, best quality:1.4), cinematic light, colorful, high contrast, mountain, grass, tree, night, (horror (theme):1.2), (mon(masterpiece, best quality:1.4), (captivating digital art), cinematic lighting, colorful, high contrast, eerie mountain landscape, lush grass, twisted trees, night scene, (horror theme:1.2), (menacing monster:1.2) lurking in shadows, dark atmosphere, blood rain pouring down, blood-red river flowing, haunting blood moon in the sky, chilling and intense visual experiencester:1.2), dark, blood rain, blood river, blood moon'''},
+                {"role": "user", "content":  locatie1_eng},
+                ]
+
+                # Set up headers with API key for authentication
+                headers = { 
+                    "Authorization": f"Bearer {API_KEY}",
+                    "Content-Type": "application/json"
+                }
+
+                # Set up data with input messages and model parameter
+                data = {
+                    "messages": messages,
+                    "model": "gpt-3.5-turbo"
+                }
+
+                # Send POST request to the ChatGPT API
+                response = requests.post(ENDPOINT, headers=headers, json=data)
+
+                if response.status_code == 200:
+                    # Extract assistant's response from API response
+                    result = response.json()
+                    locatie1_p = result["choices"][0]["message"]["content"]
+                    print(locatie1_p)
+                
+                    import json
+                    import io
+                    import base64
+                    from PIL import Image, PngImagePlugin
+
+                    url = IMG_API
+
+                    payload = {
+                        "prompt": locatie1_p,
+                        "steps": 50,
+                        "width": 1024,
+                        "height": 512
+                    }
+
+                    response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+
+                    r = response.json()
+                    for i in r['images']:
+                        image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                        png_payload = {
+                            "image": "data:image/png;base64," + i
+                        }
+                        response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+                        pnginfo = PngImagePlugin.PngInfo()
+                        pnginfo.add_text("parameters", response2.json().get("info"))
+                        image.save('locimg1.png', pnginfo=pnginfo)
+                        # Read the image file and convert to base64 encoding
+                        with open('locimg1.png', 'rb') as image_file:
+                            locimg1 = base64.b64encode(image_file.read()).decode('utf-8')
+                        print(locimg1)
+                    
+                    #jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+
+                    messages = [
+                    {"role": "system", "content": "Ești un creator de lume AI, utilizatorul va introduce un concept pentru lumea sa și vei crea un eveniment major care s-a întâmplat într-un moment dat și care a schimbat lumea respectiva."},
+                    {"role": "user", "content": concept_extins},
+                    ]
+
+                    # Set up headers with API key for authentication
+                    headers = { 
+                        "Authorization": f"Bearer {API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+
+                    # Set up data with input messages and model parameter
+                    data = {
+                        "messages": messages,
+                        "model": "gpt-3.5-turbo"
+                    }
+
+                    # Send POST request to the ChatGPT API
+                    response = requests.post(ENDPOINT, headers=headers, json=data)
+
+                    if response.status_code == 200:
+                        # Extract assistant's response from API response
+                        result = response.json()
+                        historie_1 = result["choices"][0]["message"]["content"]
+                        
+                        import json
+                        import io
+                        import base64
+                        from PIL import Image, PngImagePlugin
+
+                        url = IMG_API
+
+                        payload = {
+                            "prompt": historie_1,
+                            "steps": 50
+                        }
+
+                        response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+
+                        r = response.json()
+                        for i in r['images']:
+                            image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                            png_payload = {
+                                "image": "data:image/png;base64," + i
+                            }
+                            response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+                            pnginfo = PngImagePlugin.PngInfo()
+                            pnginfo.add_text("parameters", response2.json().get("info"))
+                            image.save('locimg2.png', pnginfo=pnginfo)
+                            # Read the image file and convert to base64 encoding
+                            with open('locimg2.png', 'rb') as image_file:
+                                istimg1 = base64.b64encode(image_file.read()).decode('utf-8')
+                            print(istimg1)
+                            #jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+
+                            messages = [
+                            {"role": "system", "content": "Ești un creator de lumi , utilizatorul va introduce un concept pentru lumea sa, iar tu vei crea un personaj care trăiește în acea lume și care este important."},
+                            {"role": "user", "content": concept_extins},
+                            ]
+
+                            # Set up headers with API key for authentication
+                            headers = { 
+                                "Authorization": f"Bearer {API_KEY}",
+                                "Content-Type": "application/json"
+                            }
+
+                            # Set up data with input messages and model parameter
+                            data = {
+                                "messages": messages,
+                                "model": "gpt-3.5-turbo"
+                            }
+
+                            # Send POST request to the ChatGPT API
+                            response = requests.post(ENDPOINT, headers=headers, json=data)
+
+                            if response.status_code == 200:
+                                # Extract assistant's response from API response
+                                result = response.json()
+                                caracter_1 = result["choices"][0]["message"]["content"]
+                                
+                                import json
+                                import io
+                                import base64
+                                from PIL import Image, PngImagePlugin
+
+                                url = IMG_API
+
+                                payload = {
+                                    "prompt": caracter_1,
+                                    "steps": 50
+                                }
+
+                                response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+
+                                r = response.json()
+                                for i in r['images']:
+                                    image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                                    png_payload = {
+                                        "image": "data:image/png;base64," + i
+                                    }
+                                    response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+                                    pnginfo = PngImagePlugin.PngInfo()
+                                    pnginfo.add_text("parameters", response2.json().get("info"))
+                                    image.save('locimg2.png', pnginfo=pnginfo)
+                                    # Read the image file and convert to base64 encoding
+                                    with open('locimg2.png', 'rb') as image_file:
+                                        carimg1 = base64.b64encode(image_file.read()).decode('utf-8')
+                                    print(istimg1)
+                            
+                                return render_template('index.html', concept_extins=concept_extins,locatie1= locatie1,historie1=historie_1, caracter1=caracter_1,locimg1 = locimg1, istimg1=istimg1, carimg1=carimg1)
+
+            

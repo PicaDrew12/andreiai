@@ -1,0 +1,225 @@
+from flask import Flask, render_template, request
+import requests
+
+
+app = Flask(__name__)
+
+# Set up API key and endpoint URL
+API_KEY = "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"
+ENDPOINT = "https://api.openai.com/v1/chat/completions"
+IMG_API = "https://4ecfe8f28e023a5023.gradio.live"
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return app.send_static_file(filename)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/get_response', methods=['POST'])
+def get_response():
+    user_question = request.form['question']
+
+    # Compose input messages
+    messages = [
+        {"role": "system", "content": "You are an AI world builder, the user will input a concept for his world and you will expand on it, make it detailed."},
+        {"role": "user", "content": user_question},
+    ]
+
+    # Set up headers with API key for authentication
+    headers = { 
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Set up data with input messages and model parameter
+    data = {
+        "messages": messages,
+        "model": "gpt-3.5-turbo"
+    }
+
+    # Send POST request to the ChatGPT API
+    response = requests.post(ENDPOINT, headers=headers, json=data)
+
+    if response.status_code == 200:
+        # Extract assistant's response from API response
+        result = response.json()
+        concept_extins = result["choices"][0]["message"]["content"]
+
+        #locatia
+
+        messages = [
+            {"role": "system", "content": "You are an AI world builder, the user will input a concept for his world and you will create a location, a important place in that world, make it detailed., only describe its visual apearance"},
+            {"role": "user", "content": concept_extins},
+        ]
+
+        # Set up headers with API key for authentication
+        headers = { 
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # Set up data with input messages and model parameter
+        data = {
+            "messages": messages,
+            "model": "gpt-3.5-turbo"
+        }
+
+        # Send POST request to the ChatGPT API
+        response = requests.post(ENDPOINT, headers=headers, json=data)
+
+        if response.status_code == 200:
+            # Extract assistant's response from API response
+            result = response.json()
+            locatie1 = result["choices"][0]["message"]["content"]
+            
+            import json
+            import io
+            import base64
+            from PIL import Image, PngImagePlugin
+
+            url = IMG_API
+
+            payload = {
+                "prompt": locatie1,
+                "steps": 50
+            }
+
+            response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+
+            r = response.json()
+            for i in r['images']:
+                image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                png_payload = {
+                    "image": "data:image/png;base64," + i
+                }
+                response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+                pnginfo = PngImagePlugin.PngInfo()
+                pnginfo.add_text("parameters", response2.json().get("info"))
+                image.save('locimg1.png', pnginfo=pnginfo)
+                # Read the image file and convert to base64 encoding
+                with open('locimg1.png', 'rb') as image_file:
+                    locimg1 = base64.b64encode(image_file.read()).decode('utf-8')
+                print(locimg1)
+            
+            #jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+
+            messages = [
+            {"role": "system", "content": "You are an AI world builder, the user will input a concept for his world and you will create a major event that happend at some point that changed the world"},
+            {"role": "user", "content": concept_extins},
+            ]
+
+            # Set up headers with API key for authentication
+            headers = { 
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            }
+
+            # Set up data with input messages and model parameter
+            data = {
+                "messages": messages,
+                "model": "gpt-3.5-turbo"
+            }
+
+            # Send POST request to the ChatGPT API
+            response = requests.post(ENDPOINT, headers=headers, json=data)
+
+            if response.status_code == 200:
+                # Extract assistant's response from API response
+                result = response.json()
+                historie_1 = result["choices"][0]["message"]["content"]
+                
+                import json
+                import io
+                import base64
+                from PIL import Image, PngImagePlugin
+
+                url = IMG_API
+
+                payload = {
+                    "prompt": historie_1,
+                    "steps": 50
+                }
+
+                response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+
+                r = response.json()
+                for i in r['images']:
+                    image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                    png_payload = {
+                        "image": "data:image/png;base64," + i
+                    }
+                    response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+                    pnginfo = PngImagePlugin.PngInfo()
+                    pnginfo.add_text("parameters", response2.json().get("info"))
+                    image.save('locimg2.png', pnginfo=pnginfo)
+                    # Read the image file and convert to base64 encoding
+                    with open('locimg2.png', 'rb') as image_file:
+                        istimg1 = base64.b64encode(image_file.read()).decode('utf-8')
+                    print(istimg1)
+                    #jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+
+                    messages = [
+                    {"role": "system", "content": "You are an AI world builder, the user will input a concept for his world and you will create character that lives in that world and is important"},
+                    {"role": "user", "content": concept_extins},
+                    ]
+
+                    # Set up headers with API key for authentication
+                    headers = { 
+                        "Authorization": f"Bearer {API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+
+                    # Set up data with input messages and model parameter
+                    data = {
+                        "messages": messages,
+                        "model": "gpt-3.5-turbo"
+                    }
+
+                    # Send POST request to the ChatGPT API
+                    response = requests.post(ENDPOINT, headers=headers, json=data)
+
+                    if response.status_code == 200:
+                        # Extract assistant's response from API response
+                        result = response.json()
+                        caracter_1 = result["choices"][0]["message"]["content"]
+                        
+                        import json
+                        import io
+                        import base64
+                        from PIL import Image, PngImagePlugin
+
+                        url = IMG_API
+
+                        payload = {
+                            "prompt": "shukezouma, octane render, hdr, (hyperdetailed:1.15), (soft light, sharp:1.2), 1girl, beautiful girl, ultra detailed eyes, mature, plump, thick, rainbow painting drops, paint teardrops, woman made up from paint, entirely paint, splat, splash, long colored hair, kimono made from paint, ultra detailed texture kimono, rainbow paint kimono, paint bulb, paint drops, (hair ornaments, earrings, flowers hair ornaments, butterflies hair ornaments), outdoors, sakura trees",
+                            "steps": 50
+                        }
+
+                        response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+
+                        r = response.json()
+                        for i in r['images']:
+                            image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+
+                            png_payload = {
+                                "image": "data:image/png;base64," + i
+                            }
+                            response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+                            pnginfo = PngImagePlugin.PngInfo()
+                            pnginfo.add_text("parameters", response2.json().get("info"))
+                            image.save('locimg2.png', pnginfo=pnginfo)
+                            # Read the image file and convert to base64 encoding
+                            with open('locimg2.png', 'rb') as image_file:
+                                carimg1 = base64.b64encode(image_file.read()).decode('utf-8')
+                            print(istimg1)
+                    
+                        return render_template('index.html', concept_extins=concept_extins,locatie1= locatie1,historie1=historie_1, caracter1=caracter_1,)
+            
